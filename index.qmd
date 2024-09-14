@@ -1,6 +1,10 @@
 ---
 title: "Wahlen Bremen"
-format: html
+format: 
+  html:
+    echo: false
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r}
@@ -15,6 +19,105 @@ Stimmzettel_Stats <- read_parquet("data/Stimmzettel_Stats.parquet")
 ParteiFarben <- tibble(Partei = c("SPD","CDU","GRÜNE","FDP","DIE LINKE","BIW","AfD"), 
                        Farbe = c("#ff0000", "#000000", "#009933","#e6e600","#990033", "#ff9900", "#0099ff" ))
 ```
+
+
+
+## Stimmeverteilung auf Stimmenart
+
+```{r}
+#| fig-height: 3.5
+Wahlvorschläge |> 
+  summarize(Stimmen = sum(Stimmen), .by = c(Jahr, Wahlbezirk,Typ)) |> 
+  mutate(Anteil = paste0(format(100*Stimmen/sum(Stimmen), digits=3, decimal.mark = ","),"%"), 
+         .by = c(Jahr, Wahlbezirk)) |> 
+  mutate(Typ = factor(Typ)) |> 
+  ggplot(aes(Jahr, Stimmen, fill = Typ, alpha=(Jahr==2023))) + geom_col() + 
+  geom_text(aes(label = Anteil), position = position_stack(vjust = 0.5), size = 3, alpha = 1) + 
+  scale_alpha_manual(values=c(0.6,1)) +
+  scale_x_continuous(breaks = c(2011,2015,2019,2023)) +
+  scale_y_continuous(labels = scales::label_number(big.mark = ".", decimal.mark = ",")) +
+  scale_fill_manual(values = c("#9b59b6","#58d68d")) +
+  facet_wrap(~Wahlbezirk, ncol = 2, scales = "free_y") +
+  labs(x="", y="Stimmen") +
+  guides(fill=guide_legend(nrow=1,byrow=TRUE), alpha = "none") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom", legend.title = element_blank())
+```
+
+
+## Wähler Typen
+
+Wie verteilen die Wählenden ihre 5 Stimmen?
+
+```{r}
+#| fig-height: 3.5
+Stimmzettel_Stats |> filter(num_valid > 0) |> group_by(Wahlbezirk, Jahr) |> 
+  count(only_party, only_person, wt = n) |> 
+  mutate(Anteil = paste0(format(100*n/sum(n),digits=3,decimal.mark = ","),"%")) |> 
+  mutate(`Wähler` = factor(paste0(only_party, only_person),levels = c("FALSETRUE","FALSEFALSE","TRUEFALSE"), 
+                         labels = c("Personenwähler","Beides","Listenwähler")) |> fct_rev()) |> 
+  ggplot(aes(Jahr, n, fill = `Wähler`, alpha=(Jahr==2023))) + geom_col() + 
+  geom_text(aes(label = Anteil), position = position_stack(vjust = 0.5), size = 3) +
+  scale_alpha_manual(values=c(0.6,1)) +
+  scale_x_continuous(breaks = c(2011,2015,2019,2023)) +
+  scale_y_continuous(labels = scales::label_number(big.mark = ".", decimal.mark = ",")) +
+  scale_fill_manual(values = c("#3498db","#8e44ad","#e74c3c")) +
+  facet_wrap(~Wahlbezirk, ncol = 2, scales = "free_y") +
+  labs(x="", y="Wähler") +
+  guides(fill=guide_legend(nrow=1,byrow=TRUE), alpha = "none") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom", legend.title = element_blank())
+```
+
+
+```{r}
+#| fig-height: 3.5
+Stimmzettel_Stats |> filter(num_valid > 0) |> group_by(Wahlbezirk, Jahr) |> 
+  count(one_party,full_cum, wt = n) |> 
+  mutate(Anteil = paste0(format(100*n/sum(n),digits=3,decimal.mark = ","),"%")) |> 
+  mutate(`Wähler` = factor(paste0(one_party,full_cum),levels = c("FALSEFALSE","TRUEFALSE","TRUETRUE"), 
+                         labels = c("parteiübergreifende\nPanaschierer","parteitreue\nPanaschierer","Vollkummulierer")) |> fct_rev()) |> 
+  ggplot(aes(Jahr, n, fill = `Wähler`, alpha=(Jahr==2023))) + geom_col() + 
+  geom_text(aes(label = Anteil), position = position_stack(vjust = 0.5), size = 3) +
+  scale_alpha_manual(values=c(0.6,1)) +
+  scale_x_continuous(breaks = c(2011,2015,2019,2023)) +
+  scale_y_continuous(labels = scales::label_number(big.mark = ".", decimal.mark = ",")) +
+  scale_fill_manual(values = c("#f16913","#addd8e","#238443")) +
+  facet_wrap(~Wahlbezirk, ncol = 2, scales = "free_y") +
+  labs(x="", y="Wähler") +
+  guides(fill=guide_legend(nrow = 1,byrow=TRUE), alpha = "none") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom", legend.title = element_blank())
+```
+
+
+```{r}
+#| fig-height: 4
+Stimmzettel_Stats |> filter(num_valid > 0) |> 
+  group_by(Wahlbezirk, Jahr) |> 
+  count(only_lead & full_cum, no_lead & full_cum, full_cum, wt = n) |> 
+  mutate(Anteil = paste0(format(100*n/sum(n),digits=3,decimal.mark = ","),"%")) |> 
+  mutate(`Vollkummulierer` = 
+           factor(paste0(`only_lead & full_cum`, `no_lead & full_cum`, full_cum),
+                  levels = c("FALSEFALSETRUE","TRUEFALSETRUE","FALSETRUETRUE","FALSEFALSEFALSE"), 
+                  labels = c("Nur eine Partei","Nur ein Spitzenkandidat","Nur ein anderer Kandidat","Panschierer") |> 
+                    fct_rev())) |> 
+  ggplot(aes(Jahr, n, fill = `Vollkummulierer`, alpha=(Jahr==2023))) + geom_col() + 
+  geom_text(aes(label = Anteil), position = position_stack(vjust = 0.5), size = 3) + 
+  scale_alpha_manual(values=c(0.6,1)) +
+  scale_x_continuous(breaks = c(2011,2015,2019,2023)) +
+  scale_y_continuous(labels = scales::label_number(big.mark = ".", decimal.mark = ",")) +
+  scale_fill_manual(values = c("#fdae6b","#fd8d3c","#d94801","#41ad5d")) +
+  facet_wrap(~Wahlbezirk, ncol = 2, scales = "free_y") +
+  labs(x="", y="Wähler") +
+  guides(fill=guide_legend(nrow=2,byrow=TRUE), alpha = "none") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom", legend.title = element_blank())
+```
+
+
+
+
 
 
 
