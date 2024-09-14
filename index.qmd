@@ -16,6 +16,7 @@ Kandidaten_Stats <- read_parquet("data/Kandidaten_Stats.parquet")
 Listen_Stats <- read_parquet("data/Listen_Stats.parquet")
 Wahlvorschläge <- read_parquet("data/Wahlvorschläge.parquet")
 Stimmzettel_Stats <- read_parquet("data/Stimmzettel_Stats.parquet")
+Mandate_Kandidaten <- read_parquet("data/Mandate_Kandidaten.parquet")
 ParteiFarben <- tibble(Partei = c("SPD","CDU","GRÜNE","FDP","DIE LINKE","BIW","AfD"), 
                        Farbe = c("#ff0000", "#000000", "#009933","#e6e600","#990033", "#ff9900", "#0099ff" ))
 ```
@@ -116,6 +117,16 @@ Stimmzettel_Stats |> filter(num_valid > 0) |>
 ```
 
 
+## Stimmen pro Wähler
+
+```{r}
+Mandate_Kandidaten |> left_join(Kandidaten_Stats, by = join_by(`Name Partei/Wählervereinigung`, Kurzform, Listenplatz, Titel, Name, Vorname, Geschlecht, Geburtsjahr, Beruf, `Stadt- oder Ortsteil`, Jahr, Wahlbezirk, `Liste Nr.`, Kennnummer, Typ, Stimmen, Wähler, Stimmen_pro_Wähler)) |> 
+  ggplot(aes(x =  Jahr, y = Stimmen_pro_Wähler)) + 
+  geom_jitter(aes(color = Mandat_erstPerson)) + 
+  #geom_smooth(aes(color = Mandat_erstPerson)) +
+  geom_smooth() +
+  facet_wrap(~Wahlbezirk)
+```
 
 
 
