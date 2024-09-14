@@ -1,0 +1,24 @@
+---
+title: "Wahlen Bremen"
+format: html
+---
+
+```{r}
+#| include: false
+library(tidyverse)
+library(glue)
+library(arrow)
+Kandidaten_Stats <- read_parquet("data/Kandidaten_Stats.parquet")
+Listen_Stats <- read_parquet("data/Listen_Stats.parquet")
+Wahlvorschläge <- read_parquet("data/Wahlvorschläge.parquet")
+Stimmzettel_Stats <- read_parquet("data/Stimmzettel_Stats.parquet")
+ParteiFarben <- tibble(Partei = c("SPD","CDU","GRÜNE","FDP","DIE LINKE","BIW","AfD"), 
+                       Farbe = c("#ff0000", "#000000", "#009933","#e6e600","#990033", "#ff9900", "#0099ff" ))
+```
+
+
+
+
+
+
+
