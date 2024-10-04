@@ -1,31 +1,56 @@
 ---
+language: "_language-de.yml"
 title: "Wahlen Bremen"
+author:
+  - name: Jan Lorenz
+    orcid: 0000-0002-5547-7848
+    corresponding: true
+    email: jlorenz@constructor.university
+    url: http://janlo.de
+    affiliations: Constructor University Bremen
+date: 2024-10-04
+date-modified: "last-modified"
+date-format: "D.MM.YYYY"
+number-sections: true
+toc: true
+toc-depth: 2
 format: 
   html:
-    echo: false
+    echo: true
+    code-fold: true
+    code-links:
+      - text: GitHub
+        icon: github
+        href: http://github.com/janlorenz/Bremen_Political_Space
 editor_options: 
   chunk_output_type: console
 ---
 
+# Daten
+
 ```{r}
-#| include: false
+#| include: true
+#| message: false
 library(tidyverse)
 library(glue)
 library(arrow)
 Kandidaten_Stats <- read_parquet("data/Kandidaten_Stats.parquet")
 Listen_Stats <- read_parquet("data/Listen_Stats.parquet")
 Wahlvorschläge <- read_parquet("data/Wahlvorschläge.parquet")
-Stimmzettel_Stats <- read_parquet("data/Stimmzettel_Stats.parquet")
+Stimmzettel_Stats <- read_parquet("data/Stimmzettel_Stats.parquet") # Not in repo! Require non-disclosure agreement. 
 Mandate_Kandidaten <- read_parquet("data/Mandate_Kandidaten.parquet")
 ParteiFarben <- tibble(Partei = c("SPD","CDU","GRÜNE","FDP","DIE LINKE","BIW","AfD"), 
                        Farbe = c("#ff0000", "#000000", "#009933","#e6e600","#990033", "#ff9900", "#0099ff" ))
+Jahre <- unique(Listen_Stats$Jahr)
 ```
 
+Grundlage dieser Analysen sind die Stimmzetteldaten der Wahlen zur Bremischen Bürgerschaft in den Jahren `r paste(Jahre[1:length(Jahre)-1], sep=", ")`, and `r tail(Jahre,1)`.
 
-
-## Stimmeverteilung auf Stimmenart
+## Stimmenverteilung nach Stimmenart
 
 ```{r}
+#| label: fig-Stimmenart
+#| fig-cap: Die farblichen Balken zeigen die absolute Anzahl der Personenstimmen und Listenstimmen bei der jeweiligen Wahl im jeweiligen Wahlbezirk 
 #| fig-height: 3.5
 Wahlvorschläge |> 
   summarize(Stimmen = sum(Stimmen), .by = c(Jahr, Wahlbezirk,Typ)) |> 
@@ -39,18 +64,21 @@ Wahlvorschläge |>
   scale_y_continuous(labels = scales::label_number(big.mark = ".", decimal.mark = ",")) +
   scale_fill_manual(values = c("#9b59b6","#58d68d")) +
   facet_wrap(~Wahlbezirk, ncol = 2, scales = "free_y") +
-  labs(x="", y="Stimmen") +
-  guides(fill=guide_legend(nrow=1,byrow=TRUE), alpha = "none") +
+  labs(x="", y="Stimmen", caption="Daten: Landeswahlleiter Bremen, Grafik: Jan Lorenz") +
+  guides(fill=guide_legend(ncol=1,byrow=TRUE), alpha = "none") +
   theme_minimal(base_size = 14) +
-  theme(legend.position = "bottom", legend.title = element_blank())
+  theme(legend.position = "right", legend.title = element_blank())
 ```
 
 
-## Wähler Typen
+## Wähler-Typen
 
 Wie verteilen die Wählenden ihre 5 Stimmen?
 
+Abbildung @fig-PersonenListenWaehler
+
 ```{r}
+#| label: fig-PersonenListenWaehler
 #| fig-height: 3.5
 Stimmzettel_Stats |> filter(num_valid > 0) |> group_by(Wahlbezirk, Jahr) |> 
   count(only_party, only_person, wt = n) |> 
@@ -118,6 +146,8 @@ Stimmzettel_Stats |> filter(num_valid > 0) |>
 
 
 ## Stimmen pro Wähler
+
+
 
 ```{r}
 Mandate_Kandidaten |> left_join(Kandidaten_Stats, by = join_by(`Name Partei/Wählervereinigung`, Kurzform, Listenplatz, Titel, Name, Vorname, Geschlecht, Geburtsjahr, Beruf, `Stadt- oder Ortsteil`, Jahr, Wahlbezirk, `Liste Nr.`, Kennnummer, Typ, Stimmen, Wähler, Stimmen_pro_Wähler)) |> 
