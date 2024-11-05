@@ -86,12 +86,12 @@ Bürgerschaft.
     method](https://en.wikipedia.org/wiki/Sainte-Lagu%C3%AB_method) to
     round these counts down to a *list vote share* and *person vote
     share* suming up to the total number of seats for that party.
-5.  *For each party, assign candidates to the seats in the person vote
-    share:* For each party list, rank the candidates by the number of
+5.  **For each party, assign candidates to the seats in the person vote
+    share:** For each party list, rank the candidates by the number of
     votes and assign the seats of the person vote share to the
     candidates from the top of that list.
-6.  *For each party, assign candidates to the seats in the list vote
-    share:* For each party list, remove those candidates from the list
+6.  **For each party, assign candidates to the seats in the list vote
+    share:** For each party list, remove those candidates from the list
     who already have a seat from the person vote share. Now assign the
     seats of the list vote share by the original list of the party,
     lowest IDs/Kennnummern first.
